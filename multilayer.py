@@ -5,11 +5,8 @@ from sklearn.utils import shuffle
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from matplotlib.colors import ListedColormap
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 
 fig = plt.figure()
-X_0 = np.arange(-2.0, 3.0, 0.1)
 
 N = 300
 X, y = datasets.make_moons(N, noise=0.3)
@@ -36,14 +33,9 @@ W_1 = tf.Variable(tf.truncated_normal([num_hidden_0, num_hidden_1]))
 b_1 = tf.Variable(tf.zeros([num_hidden_1]))
 h_1 = tf.nn.sigmoid(tf.matmul(h_0, W_1) + b_1)
 
-num_hidden_2 = 8
-W_2 = tf.Variable(tf.truncated_normal([num_hidden_1, num_hidden_2]))
-b_2 = tf.Variable(tf.zeros([num_hidden_2]))
-h_2 = tf.nn.sigmoid(tf.matmul(h_1, W_2) + b_2)
-
-V = tf.Variable(tf.truncated_normal([num_hidden_2, 1]))
+V = tf.Variable(tf.truncated_normal([num_hidden_1, 1]))
 c = tf.Variable(tf.zeros([1]))
-y = tf.nn.sigmoid(tf.matmul(h_2, V) + c)
+y = tf.nn.sigmoid(tf.matmul(h_1, V) + c)
 
 t = tf.placeholder(tf.float32, shape=[None, 1])
 cross_entropy = - tf.reduce_sum(t * tf.log(y) + (1-t) * tf.log(1-y))
@@ -52,7 +44,7 @@ correct_prediction = tf.equal(tf.to_float(tf.greater(y, 0.5)), t)
 
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-batch_size = 20
+batch_size = 30
 n_batches = N
 
 init = tf.global_variables_initializer()
@@ -61,7 +53,6 @@ sess.run(init)
 
 for epoch in range(500):
     X_, Y_ = shuffle(X_train, Y_train)
-
    
     for i in range(n_batches):
         start = i * batch_size
@@ -72,13 +63,8 @@ for epoch in range(500):
 accuracy_rate = accuracy.eval(session=sess, feed_dict={x: X_test, t: Y_test})
 print('accuracy:', accuracy_rate)
 
-#X_1 = sess.run(V[0])*(X_0**3) + sess.run(V[1])*(X_0**2) + sess.run(V[2])*X_0 + sess.run(c)
-#X_1 = ( sess.run(V[0])*(X_0**3) - sess.run(V[1])*(X_0**2) + X_0 - sess.run(c) ) / sess.run(V[2])
-#h_0 = sess.run(W[0][0])*X_0 + sess.run(W[0][1])*
-#plt.plot(X_0, X_1)
-
-W0_val, W1_val, W2_val, V_val = sess.run([W_0, W_1, W_2, V]) 
-b0_val, b1_val, b2_val, c_val = sess.run([b_0, b_1, b_2, c])
+W0_val, W1_val, V_val = sess.run([W_0, W_1, V]) 
+b0_val, b1_val, c_val = sess.run([b_0, b_1, c])
 
 def classifying_input(X):
     return np.dot(X, V_val) + c_val
@@ -89,8 +75,7 @@ def sigmoid(a):
 
 def predict(X):
     h_0 = np.tanh(np.dot(X, W0_val) + b0_val)
-    h_1 = np.tanh(np.dot(h_0, W1_val) + b1_val)
-    h_2 = np.tanh(np.dot(h_1, W2_val) + b2_val)
+    h_2 = np.tanh(np.dot(h_0, W1_val) + b1_val)
 
     return np.where(1 / (1 + np.exp(-classifying_input(h_2))) >= 0.5, 1, 0)
 
